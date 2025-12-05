@@ -1,0 +1,205 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+% The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
+%Template version as of 6/27/2024
+
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{hyperref}
+
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+\begin{document}
+
+\title{Phishing Website Prediction Project Report}
+
+\author{
+\begin{tabular}{cc}
+Stella Sinlao & Caitlyn Hue \\
+\textit{College of Science} & \textit{College of Science} \\
+\textit{California State Polytechnic University, Pomona} &
+\textit{California State Polytechnic University, Pomona} \\
+Pomona, CA, USA & Pomona, CA, USA \\
+slsinlao@cpp.edu & cdhue@cpp.edu \\[1em]
+
+Wesley Trinh & Javi Wu \\
+\textit{College of Science} & \textit{College of Science} \\
+\textit{California State Polytechnic University, Pomona} &
+\textit{California State Polytechnic University, Pomona} \\
+Pomona, CA, USA & Pomona, CA, USA \\
+wesleytrinh@cpp.edu & javiwu@cpp.edu \\[1em]
+
+Tanya Patel & \\
+\textit{College of Science} & \\
+\textit{California State Polytechnic University, Pomona} & \\
+Pomona, CA, USA & \\
+tanyapatel@cpp.edu &
+\end{tabular}
+}
+
+
+\maketitle
+
+\begin{abstract}
+This project trains and evaluates machine learning models on the UCI Phishing Websites dataset to predict whether a website contains harmful content. The goal is to learn key patterns in phishing links from labeled examples and to use both a simple linear model and tree-based ensemble methods to recognize them. We also compare baseline models for context. The study focuses on URL-based and page-level indicators and reports results on a stratified 70/30 train–test split with 5-fold cross-validation on the training data. In our final experiments, all models achieved strong performance, with the tree-based ensemble methods clearly outperforming the linear baseline. Among these, Histogram-Based Gradient Boosting provided the best overall balance between accurately detecting phishing websites and minimizing false alarms on legitimate sites.
+\end{abstract}
+
+\begin{IEEEkeywords}
+phishing, model, ensemble methods, dataset
+\end{IEEEkeywords}
+
+Phishing attacks are the most common type of cyberattack that is used to steal personal information or install malware. This problem continues to evolve as attackers adopt new techniques like URL obfuscation and redirection, making it harder to recognize legitimate URLs from “phishy” ones. This project focuses on detecting phishing websites by analyzing URL-based features that may indicate malicious intent. Our motivation is to develop a model capable of accurately distinguishing phishing websites from legitimate ones using URL-based characteristics. To accomplish this, we are using the Phishing Websites dataset by UCI as a reference to train our machine learning model, since it contains labeled examples of phishing and legitimate websites along with many classifications of URL features.
+
+To evaluate this approach, we implemented three supervised learning models on the UCI \href{https://archive.ics.uci.edu/dataset/327/phishing+websites}{Phishing Websites} dataset: Logistic Regression, Random Forest, and Histogram-Based Gradient Boosting. We used a stratified 70/30 train–test split together with 5-fold cross-validation on the training set to choose hyperparameters fairly. The main evaluation metric is Macro F1, which balances performance on both phishing and legitimate classes. Our experiments show that while Logistic Regression provides a strong linear baseline (0.93 accuracy, 0.9255 Macro F1), tree-based ensembles perform better. Random Forest and Histogram-Based Gradient Boosting both reach about 0.97 accuracy, with Histogram-Based Gradient Boosting achieving the highest Macro F1 score of 0.9740 and the most balanced confusion matrix.
+
+\section{Dataset Details}
+
+\subsection{Samples}\label{AA}
+The dataset contains \textbf{11,055 website instances}, each represented by 30 engineered features. These samples were mainly collected from the PhishTank archive, MillerSmiles archive, and Google search operators. Each instance is labeled with a target variable Result, indicating whether the website is \textit{Legitimate} (1) or \textit{Phishing} (-1). The dataset is tabular, integer-based, and contains no missing values, making it suitable for direct use in classification tasks.
+In the notebook, the dataset is loaded from the ARFF file, and any byte-encoded string fields are decoded into standard strings. We then convert all feature and label values to integers to simplify model training.
+An instance of this dataset looks like this:
+
+-1,1,1,1,-1,-1,-1,-1,-1,1,1,-1,1,-1,1,-1,-1,-1,0,1,1,1,1,-1,-1,-1,-1,1,1,-1,-1
+
+Each feature value is encoded as a numerical value (typically -1, 0, or 1) to represent different categorical conditions (e.g., “safe”, “unknown”, “suspicious”).
+
+
+\subsection{Features}
+The Phishing Websites dataset includes \textbf{30 input features} that describe properties of the URL and webpage, and one target label (Result). The features include:
+\begin{itemize}
+    \item having IP Address
+    \item URL Length
+    \item Shortening Service
+    \item having At Symbol
+    \item double slash redirecting
+    \item prefix suffix
+    \item having Sub Domain
+    \item SSLfinal State
+    \item Domain registeration length
+    \item Favicon
+    \item port
+    \item HTTPS token
+    \item Request URL
+    \item URL of Anchor
+    \item Links in tags
+    \item SFH
+    \item Submitting to email
+    \item Abnormal URL
+    \item Redirect
+    \item on mouseover
+    \item RightClick
+    \item popUpWidnow
+    \item Iframe
+    \item age of domain
+    \item DNSRecord
+    \item web traffic
+    \item Page Rank
+    \item Google Index
+    \item Links pointing to page
+    \item Statistical report
+    \item Result
+\end{itemize}
+The target attribute Result encodes whether the site is legitimate (1) or phishing (-1). In our experiments, we discovered that removing the \texttt{RightClick} feature slightly improved downstream model performance, so we created a cleaned dataset, df\_clean, by dropping this single feature before training our main models.
+
+
+\subsection{Class Distribution}
+Out of 11,055 total samples, the class distribution is:
+\begin{itemize}
+    \item \textbf{Legitimate (1):} 6,157
+    \item \textbf{Phishing (-1):} 4,898
+\end{itemize}
+Legitimate websites are the majority class, but phishing sites still make up a substantial portion of the data. We use stratified splitting and, where supported, class weights to compensate for this imbalance and prevent models from focusing too heavily on the legitimate class.
+
+\section{Methodology}
+\subsection{Data Preparation and Sampling }
+We began by loading the dataset from the ARFF file into a table and converting everything into a clean numeric format. Any byte-encoded columns were decoded to regular strings, and all feature and label values were stored as integers. To determine the importance of each feature we got the entropy and information gain and visualized it to see the contributions to the target class (Fig. 1). We then removed one feature, RightClick, because it did not improve performance in our tests and slightly hurt the models.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{info-gain.png}
+    \caption{Decision Tree of Features by Entropy}
+    \label{fig:placeholder}
+\end{figure}
+
+After that, we separated the data into features and labels: the \textbf{input features (X)} contained all columns describing the website, and the \textbf{label (y)} was the \texttt{Result} column, where 1 represents a legitimate site, and -1 represents a phishing site.
+
+To train and evaluate our models fairly, we split the dataset into two parts: 70\% for training and 30\% for testing. We used a stratified split so that the proportion of phishing and legitimate sites stayed about the same in both sets. A fixed random seed was used so that we always get the same split when running the code again. All later training and tuning steps used only the training set. The test set was kept separate for the final evaluation.
+
+
+\subsection{Train and test design }
+Once the data was prepared, all three models were trained on the same 70\% training set and evaluated on the same 30\% test set. Within the training set, we used \textbf{5-fold cross-validation} to choose good hyperparameters for each model. In cross-validation, the training data is repeatedly split into five parts. In each round, four parts are used to train the model and the remaining part is used to check how well it performs. This helps us avoid relying on a single lucky or unlucky split.
+
+For each model, we tried several reasonable hyperparameter settings and compared them using Macro F1 on the cross-validation folds, since this metric treats phishing and legitimate websites equally. 
+After picking the best settings for each model, we trained that model once more on the full training set and then evaluated it on the held-out test set. All of the accuracy, Macro F1 scores, and confusion matrices in the Results section come from this final test evaluation.
+
+\subsection{Machine learning model }
+We evaluated three machine learning models from sklearn's ensemble library and selected the final model from this set based on Macro F1 during cross-validation. As tiebreakers, we considered recall on the phishing class, stability across folds, and model simplicity.
+\begin{enumerate}
+    \item \textbf{Logistic Regression}. This served as the linear baseline. We used the standard objective for the binary case, standardized the features, applied L2 regularization, and set balanced class weights to account for the slight class imbalance.
+
+    \item \textbf{Random Forest}. This model averages many decision trees trained on bootstrap samples and can capture nonlinear interactions between features with modest tuning cost. We tuned the number of trees, the maximum depth, and basic split and leaf size parameters, and we enabled \texttt{class\_weight='balanced'} so that phishing sites were not underweighted.
+
+    \item \textbf{Histogram-Based Gradient Boosting}. This stage-wise tree learner builds trees sequentially, with each tree attempting to correct the errors of the previous ones, and is often strong on tabular data. We tuned the learning rate, maximum depth, and a small L2 regularization term and used it as our most flexible model.
+\end{enumerate}
+All models used fixed random seeds. We searched compact hyperparameter grids with 5-fold cross-validation on the training set and then refit the best configuration for each model on the full training set before evaluating on the held-out test set. Based on Macro F1 and test performance, Histogram-Based Gradient Boosting was selected as our best-performing model.
+
+In Fig. 2, we notice from the bar chart, the difference in F1 score between each model. This is the measure of the model's accuracy with a combination of precision and recall scores. 
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{f1-comparisons.png}
+    \caption{F1-Score Comparison of Models}
+    \label{fig:placeholder}
+\end{figure}
+
+\subsection{Model evaluation }
+To judge how well each model performed, we focused on \textbf{Macro F1} as our main evaluation metric. Macro F1 averages the F1 scores of the phishing and legitimate classes, so both classes are weighted equally, even though the dataset is slightly imbalanced. This helps us avoid models that look good in terms of overall accuracy but do a poor job on phishing sites.
+
+In addition to Macro F1, we also recorded overall accuracy, precision, and recall using the classification report for each model. For a more detailed view of the kinds of mistakes each model makes, we plotted normalized confusion matrices, which show the proportion of correctly and incorrectly classified examples for each class. 
+
+Finally, we compared the three models side by side using a bar chart of Macro F1 scores. All of these metrics and plots are computed on the held-out test set, after hyperparameters were chosen using cross-validation on the training set.
+
+\section{Results}
+Our experiments show that all three models perform well on the Phishing Websites dataset, with tree-based ensembles clearly outperforming the linear baseline.
+
+Logistic Regression achieved a test accuracy of 0.93 and a Macro F1 score of \textit {\textbf{ 0.9255}}. This confirms that the engineered URL and page features contain enough information to distinguish phishing from legitimate sites, even with a simple linear model. However, the confusion matrix reveals more misclassifications than the ensemble models, especially on borderline websites where the features are ambiguous.
+
+The Random Forest classifier reached an accuracy of about 0.97 and a Macro F1 score of \textbf{\textit{0.9709}} on the test set. Its confusion matrix shows a noticeable reduction in both false positives (legitimate sites incorrectly flagged as phishing) and false negatives (phishing sites missed by the model) compared to Logistic Regression. This improvement comes from Random Forest’s ability to model nonlinear relationships and interactions between features such as \textit{SSLfinal\_State, Web\_Traffic, URL\_of\_Anchor, and Having\_SubDomain.}
+
+Histogram-Based Gradient Boosting delivered the best overall performance. It achieved a similar accuracy of about 0.97 but obtained the highest Macro F1 score at \textit {\textbf{ 0.9740}}. Its confusion matrix shows the lowest total number of misclassified instances, with high recall on phishing websites and low false-alarm rates for legitimate websites. A bar chart comparing Macro F1 scores summarizes these trends: Logistic Regression performs worst among the three (though still reasonably strong), while Random Forest and Histogram-Based Gradient Boosting form a close pair at the top, with Histogram-Based Gradient Boosting slightly ahead.
+Based on these results, we selected Histogram-Based Gradient Boosting as our final model for phishing website detection.
+
+\section{Related Work}
+The Phishing Websites dataset we used was introduced by Mohammad, Thabtah, and McCluskey, who engineered a set of URL-based and page-level features and evaluated traditional classifiers for phishing detection. Later work by the same authors applied a neural network trained with backpropagation and reported strong performance, highlighting the value of these hand-crafted features for automated detection.
+
+Many subsequent studies have compared machine learning models for phishing detection and found that ensemble methods such as Random Forest and gradient boosting often achieve the best performance on phishing URL datasets, surpassing simpler models like Logistic Regression or Naïve Bayes. Our work fits into this line of research by providing a direct comparison of Logistic Regression, Random Forest, and Histogram-Based Gradient Boosting on the UCI Phishing Websites dataset, with an emphasis on Macro F1, confusion matrices, and careful cross-validation.
+
+\section{Conclusion}
+In this project, we built and evaluated three machine learning models for phishing website detection using the UCI Phishing Websites dataset. Starting from URL-based and page-level features, we trained Logistic Regression, Random Forest, and Histogram-Based Gradient Boosting models with a stratified 70/30 train–test split and 5-fold cross-validation on the training data. All three models achieved high accuracy, confirming that the engineered features capture useful information about phishing behavior.
+
+Our results show that tree-based ensemble methods clearly outperform the linear baseline: Random Forest and Histogram-Based Gradient Boosting both reach about 0.97 accuracy, with Histogram-Based Gradient Boosting achieving the best Macro F1 score of 0.9740 and the most balanced confusion matrix. These findings support the use of gradient-boosted trees as a strong default model for phishing URL detection.
+
+As phishing attacks continue to evolve, accurate website classifiers like these can serve as a crucial line of defense between users and the pages that try to deceive them.
+
+\begin{thebibliography}{00}
+\bibitem{b1} R. M. Mohammad, F. Thabtah, and L. McCluskey, “Predicting Phishing Websites using Neural Network trained with Back-Propagation,” ResearchGate, (accessed Oct. 24, 2025).
+\bibitem{b2}A. Mandadi, S. Boppana, V. Ravella and R. Kavitha, "Phishing Website Detection Using Machine Learning," 2022 IEEE 7th International Conference for Convergence in Technology (I2CT), Mumbai, India, 2022
+\end{thebibliography}
+
+\section*{Supplementary Material}
+The LaTeX source files and project code are available at
+\href{https://github.com/ssinlao/CS4210-Phishing-Website-Project/tree/main}{\textit{this GitHub repository}}. 
+
+The Phishing Websites dataset used in this project is available from the
+\href{https://archive.ics.uci.edu/dataset/327/phishing+websites}{\textit{UCI Machine Learning Repository}}.
+
+
+
+
+\vspace{12pt}
+\color{red}
+
+\end{document}
